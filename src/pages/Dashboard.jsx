@@ -8,6 +8,16 @@ import ApperIcon from '../components/ApperIcon'
 function Dashboard() {
   const [tasks, setTasks] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    status: 'pending',
+    dueDate: '',
+    category: 'personal',
+    tags: []
+  })
 
   // Load tasks from localStorage on component mount
   useEffect(() => {
@@ -30,6 +40,91 @@ function Dashboard() {
       setRecentActivity(activity)
     }
   }, [])
+  }, [])
+
+  // Save tasks to localStorage whenever tasks change
+  useEffect(() => {
+    localStorage.setItem('taskflow-tasks', JSON.stringify(tasks))
+  }, [tasks])
+
+  const priorities = [
+    { value: 'low', label: 'Low', color: 'text-green-600', bg: 'bg-green-100' },
+    { value: 'medium', label: 'Medium', color: 'text-yellow-600', bg: 'bg-yellow-100' },
+    { value: 'high', label: 'High', color: 'text-orange-600', bg: 'bg-orange-100' },
+    { value: 'urgent', label: 'Urgent', color: 'text-red-600', bg: 'bg-red-100' }
+  ]
+
+  const categories = [
+    { value: 'personal', label: 'Personal', icon: 'User', color: 'text-blue-600' },
+    { value: 'work', label: 'Work', icon: 'Briefcase', color: 'text-purple-600' },
+    { value: 'health', label: 'Health', icon: 'Heart', color: 'text-red-600' },
+    { value: 'learning', label: 'Learning', icon: 'BookOpen', color: 'text-green-600' },
+    { value: 'finance', label: 'Finance', icon: 'DollarSign', color: 'text-yellow-600' }
+  ]
+
+  const handleTaskSubmit = (e) => {
+    e.preventDefault()
+    
+    if (!newTask.title.trim()) {
+      toast.error('Please enter a task title')
+      return
+    }
+
+    const task = {
+      id: Date.now().toString(),
+      ...newTask,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: newTask.tags.filter(tag => tag.trim())
+    }
+
+    setTasks(prev => {
+      const updatedTasks = [...prev, task]
+      // Update recent activity
+      const activity = updatedTasks
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+        .slice(0, 5)
+        .map(task => ({
+          id: task.id,
+          type: task.status === 'completed' ? 'completed' : 'created',
+          task: task.title,
+          time: task.updatedAt || task.createdAt,
+          priority: task.priority
+        }))
+      setRecentActivity(activity)
+      return updatedTasks
+    })
+
+    toast.success('Task created successfully!')
+    
+    // Reset form
+    setNewTask({
+      title: '',
+      description: '',
+      priority: 'medium',
+      status: 'pending',
+      dueDate: '',
+      category: 'personal',
+      tags: []
+    })
+    setShowTaskModal(false)
+  }
+
+  const addTag = (tag) => {
+    if (tag.trim() && !newTask.tags.includes(tag.trim())) {
+      setNewTask(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag.trim()]
+      }))
+    }
+  }
+
+  const removeTag = (tagToRemove) => {
+    setNewTask(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }))
+  }
 
   const getTaskStats = () => {
     const total = tasks.length
@@ -92,9 +187,7 @@ function Dashboard() {
   const handleQuickAction = (action) => {
     switch (action) {
       case 'add-task':
-        toast.info('Redirecting to task creation...')
-        // Navigate to main page with form open
-        window.location.href = '/#add-task'
+        setShowTaskModal(true)
         break
       case 'view-overdue':
         toast.info('Showing overdue tasks...')
@@ -146,7 +239,8 @@ function Dashboard() {
                 Tasks
               </Link>
               <motion.button
-                onClick={() => handleQuickAction('add-task')}
+                onClick={() => setShowTaskModal(true)}
+                className="btn-primary"
                 className="btn-primary"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -459,6 +553,182 @@ function Dashboard() {
       </main>
     </div>
   )
+
+      {/* Task Creation Modal */}
+      <AnimatePresence>
+        {showTaskModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTaskModal(false)}
+          >
+            <motion.div
+              className="card-neu p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-surface-800 dark:text-surface-200">
+                  Create New Task
+                </h3>
+                <motion.button
+                  onClick={() => setShowTaskModal(false)}
+                  className="p-2 rounded-lg bg-surface-200 dark:bg-surface-700 hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <ApperIcon name="X" className="h-5 w-5" />
+                </motion.button>
+              </div>
+
+              <form onSubmit={handleTaskSubmit} className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Task Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                    className="input-neu w-full"
+                    placeholder="Enter task title..."
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    className="input-neu w-full h-20 resize-none"
+                    placeholder="Add task description..."
+                  />
+                </div>
+
+                {/* Priority and Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Priority
+                    </label>
+                    <select
+                      value={newTask.priority}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, priority: e.target.value }))}
+                      className="input-neu w-full"
+                    >
+                      {priorities.map(priority => (
+                        <option key={priority.value} value={priority.value}>
+                          {priority.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={newTask.category}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, category: e.target.value }))}
+                      className="input-neu w-full"
+                    >
+                      {categories.map(category => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Due Date */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newTask.dueDate}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+                    className="input-neu w-full"
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Tags
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {newTask.tags.map((tag, index) => (
+                      <motion.span
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="hover:text-red-500 transition-colors"
+                        >
+                          <ApperIcon name="X" className="h-3 w-3" />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Add tag and press Enter..."
+                    className="input-neu w-full"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addTag(e.target.value)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <motion.button
+                    type="submit"
+                    className="btn-primary flex-1"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ApperIcon name="Plus" className="h-5 w-5 mr-2" />
+                    Create Task
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowTaskModal(false)}
+                    className="px-6 py-3 bg-surface-200 dark:bg-surface-700 text-surface-700 dark:text-surface-300 rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-all duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 }
 
 export default Dashboard
