@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
-
 function Home() {
   const [darkMode, setDarkMode] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -95,6 +95,22 @@ function Home() {
               </div>
             </div>
           </motion.div>
+          {/* Dashboard Button */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.4, type: "spring" }}
+          >
+            <Link to="/dashboard">
+              <motion.div
+                className="p-3 rounded-xl card-neu hover:shadow-glow transition-all duration-300 group cursor-pointer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ApperIcon name="BarChart3" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
+              </motion.div>
+            </Link>
+          </motion.div>
 
           {/* Dark Mode Toggle */}
           <motion.button
@@ -112,22 +128,6 @@ function Home() {
               <ApperIcon name="Moon" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
             )}
           </motion.button>
-        </div>
-      </motion.header>
-
-      {/* Hero Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-8"
           >
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-surface-800 dark:text-surface-100 mb-4 text-balance">
               Transform Your 
