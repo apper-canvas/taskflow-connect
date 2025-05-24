@@ -549,9 +549,7 @@ function Dashboard() {
           </div>
         </motion.div>
       </main>
-    </div>
-  )
-
+      
       {/* Task Creation Modal */}
       <AnimatePresence>
         {showTaskModal && (
@@ -727,6 +725,11 @@ function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+export default Dashboard
 }
 
 export default Dashboard
