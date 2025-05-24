@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter
+} from '@dnd-kit/core'
+
 import { toast } from 'react-toastify'
 import { 
   format, 
@@ -25,6 +37,18 @@ const Calendar = () => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedTasks, setSelectedTasks] = useState([])
   const [editingTask, setEditingTask] = useState(null)
+  
+  const [draggedTask, setDraggedTask] = useState(null)
+  
+  // Configure drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  )
   
   // Task form state
   const [taskForm, setTaskForm] = useState({
@@ -180,6 +204,120 @@ const Calendar = () => {
       toast.success('Task created successfully!')
     }
     
+  // Handle drag start
+  const handleDragStart = (event) => {
+    const { active } = event
+    const task = tasks.find(t => t.id === active.id)
+    setDraggedTask(task)
+  }
+  
+  // Handle drag end
+  const handleDragEnd = (event) => {
+    const { active, over } = event
+    setDraggedTask(null)
+    
+    if (!over) {
+      return
+    }
+    
+    const taskId = active.id
+    const newDate = over.id
+    
+    // Find the task being dragged
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) {
+      toast.error('Task not found!')
+      return
+    }
+    
+    // Check if the drop target is a valid date
+    if (!newDate || newDate === task.dueDate) {
+      return
+    }
+    
+    try {
+      // Update the task's due date
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId 
+          ? { ...t, dueDate: newDate, updatedAt: new Date().toISOString() }
+          : t
+      )
+      
+      setTasks(updatedTasks)
+      
+      // Update selected tasks if viewing day details
+      if (selectedDate) {
+        const dayTasks = getTasksForDate(selectedDate)
+        setSelectedTasks(dayTasks)
+      }
+      
+      toast.success(`Task moved to ${format(new Date(newDate), 'MMM d, yyyy')}!`)
+    } catch (error) {
+// Draggable Task Component
+const DraggableTask = ({ task, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: task.id,
+  })
+  
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`draggable ${isDragging ? 'dragging' : ''}`}
+      {...listeners}
+      {...attributes}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Droppable Day Component
+const DroppableDay = ({ date, children, isCurrentMonth }) => {
+  const {
+    isOver,
+    setNodeRef
+  } = useDroppable({
+    id: format(date, 'yyyy-MM-dd'),
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`
+        drop-zone
+        ${isOver ? 'drag-over' : ''}
+        ${!isCurrentMonth ? 'pointer-events-none' : ''}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-surface-900 dark:via-surface-800 dark:to-primary-900">
+    >
+      {children}
+    </div>
+  )
+}
+
+
+      toast.error('Failed to move task!')
+    }
+  }
+  
+
     setShowCreateModal(false)
     setEditingTask(null)
   }
@@ -248,48 +386,6 @@ const Calendar = () => {
             
             <div className="flex items-center space-x-4">
               <button
-                onClick={goToToday}
-                className="btn-sleek"
-              >
-                Today
-              </button>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={prevMonth}
-                  className="p-2 rounded-lg bg-white shadow-soft hover:shadow-md transition-all duration-300 hover:scale-105"
-                >
-                  <ApperIcon name="ChevronLeft" className="w-5 h-5 text-surface-600" />
-                </button>
-                
-                <h2 className="text-lg font-semibold text-surface-800 min-w-[200px] text-center">
-                  {format(currentDate, 'MMMM yyyy')}
-                </h2>
-                
-                <button
-                  onClick={nextMonth}
-                  className="p-2 rounded-lg bg-white shadow-soft hover:shadow-md transition-all duration-300 hover:scale-105"
-                >
-                  <ApperIcon name="ChevronRight" className="w-5 h-5 text-surface-600" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      {/* Calendar Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-neu-light border border-surface-200/50 overflow-hidden">
-          {/* Week Days Header */}
-          <div className="grid grid-cols-7 bg-surface-50 border-b border-surface-200">
-            {weekDays.map(day => (
-              <div key={day} className="p-4 text-center font-semibold text-surface-600 border-r border-surface-200 last:border-r-0">
-                {day}
-              </div>
-            ))}
-          </div>
-          
           {/* Calendar Days */}
           <div className="grid grid-cols-7">
             {calendarDays.map((day, index) => {
@@ -298,16 +394,57 @@ const Calendar = () => {
               const isDayToday = isToday(day)
               
               return (
-                <motion.div
+                <DroppableDay 
                   key={day.toString()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`
-                    relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
-                    ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
-                    ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
-                  `}
-                  onClick={() => handleDayClick(day)}
+                  date={day}
+                  isCurrentMonth={isCurrentMonth}
+                >
+                  <motion.div
+                    whileHover={{ scale: isCurrentMonth ? 1.02 : 1 }}
+                    whileTap={{ scale: isCurrentMonth ? 0.98 : 1 }}
+                    className={`
+                      relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
+                      ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
+                      ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
+                    `}
+                    onClick={() => isCurrentMonth && handleDayClick(day)}
+                  >
+                    <div className={`
+                      text-sm font-medium mb-2
+                      ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
+                    `}>
+                      {format(day, 'd')}
+                    </div>
+                    
+                    {/* Task indicators */}
+                    {dayTasks.length > 0 && (
+                      <div className="space-y-1">
+                        {dayTasks.slice(0, 3).map(task => (
+                          <DraggableTask key={task.id} task={task}>
+                            <div
+                              className={`
+                                text-xs p-1 rounded truncate text-white font-medium cursor-grab active:cursor-grabbing
+                                ${getPriorityColor(task.priority)}
+                              `}
+                              title={task.title}
+                            >
+                              {task.title}
+                            </div>
+                          </DraggableTask>
+                        ))}
+                        
+                        {dayTasks.length > 3 && (
+                          <div className="text-xs text-surface-500 font-medium">
+                            +{dayTasks.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                </DroppableDay>
+              )
+            })}
+          </div>
                 >
                   <div className={`
                     text-sm font-medium mb-2
@@ -545,8 +682,19 @@ const Calendar = () => {
                     className="input-neu w-full h-24 resize-none"
                     placeholder="Enter task description"
                   />
-                </div>
-                
+      </div>
+      
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {draggedTask ? (
+          <div className="drag-overlay p-2 text-xs font-medium text-white rounded">
+            <div className={`p-1 rounded ${getPriorityColor(draggedTask.priority)}`}>
+              {draggedTask.title}
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
                 {/* Priority and Category */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
