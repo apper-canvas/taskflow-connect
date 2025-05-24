@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
+
 function Home() {
   const [darkMode, setDarkMode] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -96,43 +96,43 @@ function Home() {
             </div>
           </motion.div>
 
-          {/* Dashboard and Dark Mode Toggle */}
-          <div className="flex items-center gap-3">
-            {/* Dashboard Button */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring" }}
-              className="hidden sm:flex"
-            >
-              <Link
-                to="/dashboard"
-                className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group card-neu"
-              >
-                <div className="flex items-center gap-2">
-                  <ApperIcon name="BarChart3" className="h-5 w-5 text-primary group-hover:text-primary-light transition-colors" />
-                  <span className="text-sm font-medium text-surface-700 dark:text-surface-300 group-hover:text-primary transition-colors">Dashboard</span>
-                </div>
-              </Link>
-            </motion.div>
+          {/* Dark Mode Toggle */}
+          <motion.button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ rotate: 0 }}
+            animate={{ rotate: darkMode ? 180 : 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {darkMode ? (
+              <ApperIcon name="Sun" className="h-6 w-6 text-secondary group-hover:text-secondary-light transition-colors" />
+            ) : (
+              <ApperIcon name="Moon" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
+            )}
+          </motion.button>
+        </div>
+      </motion.header>
 
-            {/* Dark Mode Toggle */}
-            <motion.button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ rotate: 0 }}
-              animate={{ rotate: darkMode ? 180 : 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {darkMode ? (
-                <ApperIcon name="Sun" className="h-6 w-6 text-secondary group-hover:text-secondary-light transition-colors" />
-              ) : (
-                <ApperIcon name="Moon" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
-              )}
-            </motion.button>
-          </div>
+      {/* Hero Section */}
+      <motion.section 
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mb-8"
+          >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-surface-800 dark:text-surface-100 mb-4 text-balance">
+              Transform Your 
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"> Productivity</span>
+            </h2>
             <p className="text-lg sm:text-xl text-surface-600 dark:text-surface-300 max-w-2xl mx-auto text-balance">
               Effortlessly organize, prioritize, and complete your tasks with our innovative task management system
             </p>
