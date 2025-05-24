@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { 
@@ -231,46 +230,7 @@ const Calendar = () => {
       default: return 'bg-gray-500'
     }
   }
-  // Handle drag end
-  const handleDragEnd = (result) => {
-    const { destination, source, draggableId } = result
-    
-    // If no destination, do nothing
-    if (!destination) return
-    
-    // If dropped in the same location, do nothing
-    if (destination.droppableId === source.droppableId) return
-    
-    // Find the task being dragged
-    const taskId = draggableId.replace('task-', '')
-    const task = tasks.find(t => t.id === taskId)
-    
-    if (!task) return
-    
-    // Parse the new date from droppable ID
-    const newDateStr = destination.droppableId.replace('day-', '')
-    const newDate = new Date(newDateStr)
-    const formattedDate = format(newDate, 'yyyy-MM-dd')
-    
-    // Update the task's due date
-    const updatedTasks = tasks.map(t => 
-      t.id === taskId 
-        ? { ...t, dueDate: formattedDate, updatedAt: new Date().toISOString() }
-        : t
-    )
-    
-    setTasks(updatedTasks)
-    
-    // Update selected tasks if viewing day details
-    if (selectedDate) {
-      const dayTasks = getTasksForDate(selectedDate)
-      setSelectedTasks(dayTasks)
-    }
-    
-    toast.success(`Task moved to ${format(newDate, 'MMM d, yyyy')}`)
-  }
   
-  const getPriorityColor = (priority) => {
   const calendarDays = generateCalendarDays()
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   
@@ -320,95 +280,70 @@ const Calendar = () => {
       
       {/* Calendar Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="bg-white rounded-2xl shadow-neu-light border border-surface-200/50 overflow-hidden">
-            {/* Week Days Header */}
-            <div className="grid grid-cols-7 bg-surface-50 border-b border-surface-200">
-              {weekDays.map(day => (
-                <div key={day} className="p-4 text-center font-semibold text-surface-600 border-r border-surface-200 last:border-r-0">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7">
-              {calendarDays.map((day, index) => {
-                const dayTasks = getTasksForDate(day)
-                const isCurrentMonth = isSameMonth(day, currentDate)
-                const isDayToday = isToday(day)
-                const dayId = `day-${format(day, 'yyyy-MM-dd')}`
-                
-                return (
-                  <Droppable key={dayId} droppableId={dayId}>
-                    {(provided, snapshot) => (
-                      <motion.div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`
-                          relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
-                          ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
-                          ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
-                          ${snapshot.isDraggedOver ? 'bg-primary-100 border-primary-300' : ''}
-                        `}
-                        onClick={() => handleDayClick(day)}
-                      >
-                        <div className={`
-                          text-sm font-medium mb-2
-                          ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                        `}>
-                          {format(day, 'd')}
-                        </div>
-                        
-                        {/* Task indicators */}
-                        {dayTasks.length > 0 && (
-                          <div className="space-y-1">
-                            {dayTasks.slice(0, 3).map((task, taskIndex) => (
-                              <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={taskIndex}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className={`
-                                      text-xs p-1 rounded truncate text-white font-medium cursor-move
-                                      ${getPriorityColor(task.priority)}
-                                      ${snapshot.isDragging ? 'shadow-lg rotate-2 scale-105' : ''}
-                                    `}
-                                    title={task.title}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {task.title}
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            
-                            {dayTasks.length > 3 && (
-                              <div className="text-xs text-surface-500 font-medium pointer-events-none">
-                                +{dayTasks.length - 3} more
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        {provided.placeholder}
-                        
-                        {/* Drop indicator */}
-                        {snapshot.isDraggedOver && (
-                          <div className="absolute inset-0 border-2 border-dashed border-primary-400 rounded-lg bg-primary-50/30 pointer-events-none" />
-                        )}
-                      </motion.div>
-                    )}
-                  </Droppable>
-                )
-              })}
-            </div>
+        <div className="bg-white rounded-2xl shadow-neu-light border border-surface-200/50 overflow-hidden">
+          {/* Week Days Header */}
+          <div className="grid grid-cols-7 bg-surface-50 border-b border-surface-200">
+            {weekDays.map(day => (
+              <div key={day} className="p-4 text-center font-semibold text-surface-600 border-r border-surface-200 last:border-r-0">
+                {day}
+              </div>
+            ))}
           </div>
-        </DragDropContext>
-      </div>
+          
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7">
+            {calendarDays.map((day, index) => {
+              const dayTasks = getTasksForDate(day)
+              const isCurrentMonth = isSameMonth(day, currentDate)
+              const isDayToday = isToday(day)
+              
+              return (
+                <motion.div
+                  key={day.toString()}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`
+                    relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
+                    ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
+                    ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
+                  `}
+                  onClick={() => handleDayClick(day)}
+                >
+                  <div className={`
+                    text-sm font-medium mb-2
+                    ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
+                  `}>
+                    {format(day, 'd')}
+                  </div>
+                  
+                  {/* Task indicators */}
+                  {dayTasks.length > 0 && (
+                    <div className="space-y-1">
+                      {dayTasks.slice(0, 3).map(task => (
+                        <div
+                          key={task.id}
+                          className={`
+                            text-xs p-1 rounded truncate text-white font-medium
+                            ${getPriorityColor(task.priority)}
+                          `}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </div>
+                      ))}
+                      
+                      {dayTasks.length > 3 && (
+                        <div className="text-xs text-surface-500 font-medium">
+                          +{dayTasks.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )
+            })}
+          </div>
+        </div>
       </div>
       
       {/* Day Tasks Modal */}
