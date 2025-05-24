@@ -40,7 +40,6 @@ function Dashboard() {
       setRecentActivity(activity)
     }
   }, [])
-  }, [])
 
   // Save tasks to localStorage whenever tasks change
   useEffect(() => {
@@ -240,7 +239,6 @@ function Dashboard() {
               </Link>
               <motion.button
                 onClick={() => setShowTaskModal(true)}
-                className="btn-primary"
                 className="btn-primary"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
