@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
-
 function Home() {
   const [darkMode, setDarkMode] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -95,33 +95,33 @@ function Home() {
               </div>
             </div>
           </motion.div>
+          </motion.div>
+
+          {/* Dashboard Button */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+          >
+            <Link
+              to="/dashboard"
+              className="card-neu p-3 hover:shadow-glow transition-all duration-300 group"
+            >
+              <motion.div
+                className="flex items-center space-x-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ApperIcon name="BarChart3" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
+                <span className="hidden sm:inline text-sm font-medium text-surface-700 dark:text-surface-300 group-hover:text-primary transition-colors">
+                  Dashboard
+                </span>
+              </motion.div>
+            </Link>
+          </motion.div>
 
           {/* Dark Mode Toggle */}
           <motion.button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ rotate: 0 }}
-            animate={{ rotate: darkMode ? 180 : 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {darkMode ? (
-              <ApperIcon name="Sun" className="h-6 w-6 text-secondary group-hover:text-secondary-light transition-colors" />
-            ) : (
-              <ApperIcon name="Moon" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
-            )}
-          </motion.button>
-        </div>
-      </motion.header>
-
-      {/* Hero Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
-      >
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
