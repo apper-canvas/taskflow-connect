@@ -87,16 +87,16 @@ function Home() {
               <ApperIcon name="Clock" className="h-5 w-5 text-primary" />
               <div className="text-right">
                 <div className="text-lg font-bold text-surface-800 dark:text-surface-200">
-            <nav className="flex items-center gap-6">
-              <Link 
-                to="/dashboard" 
-                className="px-4 py-2 text-surface-600 dark:text-surface-400 hover:text-primary font-medium transition-colors"
-              >
-                Dashboard
-              </Link>
-              <motion.button
-                onClick={() => setShowAddForm(true)}
-                className="btn-primary"
+                  {formatTime(currentTime)}
+                </div>
+                <div className="text-xs text-surface-600 dark:text-surface-400">
+                  {formatDate(currentTime)}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Dark Mode Toggle */}
           <motion.button
             onClick={() => setDarkMode(!darkMode)}
             className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group"
