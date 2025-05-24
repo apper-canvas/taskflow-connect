@@ -29,6 +29,59 @@ import {
 } from 'date-fns'
 import ApperIcon from '../components/ApperIcon'
 
+// Draggable Task Component
+const DraggableTask = ({ task, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: task.id,
+  })
+  
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`draggable ${isDragging ? 'dragging' : ''}`}
+      {...listeners}
+      {...attributes}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Droppable Day Component
+const DroppableDay = ({ date, children, isCurrentMonth }) => {
+  const {
+    isOver,
+    setNodeRef
+  } = useDroppable({
+    id: format(date, 'yyyy-MM-dd'),
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`
+        drop-zone
+        ${isOver ? 'drag-over' : ''}
+        ${!isCurrentMonth ? 'pointer-events-none' : ''}
+      `}
+    >
+      {children}
+    </div>
+  )
+}
+
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
@@ -204,6 +257,10 @@ const Calendar = () => {
       toast.success('Task created successfully!')
     }
     
+    setShowCreateModal(false)
+    setEditingTask(null)
+  }
+  
   // Handle drag start
   const handleDragStart = (event) => {
     const { active } = event
@@ -253,73 +310,8 @@ const Calendar = () => {
       
       toast.success(`Task moved to ${format(new Date(newDate), 'MMM d, yyyy')}!`)
     } catch (error) {
-// Draggable Task Component
-const DraggableTask = ({ task, children }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: task.id,
-  })
-  
-  const style = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0.5 : 1,
-  }
-  
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`draggable ${isDragging ? 'dragging' : ''}`}
-      {...listeners}
-      {...attributes}
-    >
-      {children}
-    </div>
-  )
-}
-
-// Droppable Day Component
-const DroppableDay = ({ date, children, isCurrentMonth }) => {
-  const {
-    isOver,
-    setNodeRef
-  } = useDroppable({
-    id: format(date, 'yyyy-MM-dd'),
-  })
-  
-  return (
-    <div
-      ref={setNodeRef}
-      className={`
-        drop-zone
-        ${isOver ? 'drag-over' : ''}
-        ${!isCurrentMonth ? 'pointer-events-none' : ''}
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-surface-900 dark:via-surface-800 dark:to-primary-900">
-    >
-      {children}
-    </div>
-  )
-}
-
-
       toast.error('Failed to move task!')
     }
-  }
-  
-
-    setShowCreateModal(false)
-    setEditingTask(null)
   }
   
   // Handle adding tags
@@ -373,461 +365,491 @@ const DroppableDay = ({ date, children, isCurrentMonth }) => {
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-surface-900 dark:via-surface-800 dark:to-primary-900">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-surface-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Calendar
-              </h1>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-surface-900 dark:via-surface-800 dark:to-primary-900">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-sm border-b border-surface-200 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Calendar
+                </h1>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={goToToday}
+                  className="btn-sleek"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+        
+        {/* Calendar Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Calendar Header */}
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-surface-200 bg-gradient-to-r from-primary/5 to-secondary/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={prevMonth}
+                    className="p-2 rounded-lg bg-surface-100 hover:bg-surface-200 transition-colors"
+                  >
+                    <ApperIcon name="ChevronLeft" className="w-5 h-5 text-surface-600" />
+                  </button>
+                  
+                  <h2 className="text-xl font-bold text-surface-900">
+                    {format(currentDate, 'MMMM yyyy')}
+                  </h2>
+                  
+                  <button
+                    onClick={nextMonth}
+                    className="p-2 rounded-lg bg-surface-100 hover:bg-surface-200 transition-colors"
+                  >
+                    <ApperIcon name="ChevronRight" className="w-5 h-5 text-surface-600" />
+                  </button>
+                </div>
+                
+                <button
+                  onClick={handleCreateTask}
+                  className="btn-primary"
+                >
+                  <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
+                  New Task
+                </button>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <button
-          {/* Calendar Days */}
-          <div className="grid grid-cols-7">
-            {calendarDays.map((day, index) => {
-              const dayTasks = getTasksForDate(day)
-              const isCurrentMonth = isSameMonth(day, currentDate)
-              const isDayToday = isToday(day)
+            {/* Calendar Grid */}
+            <div className="bg-white">
+              {/* Week Days Header */}
+              <div className="grid grid-cols-7 border-b border-surface-200">
+                {weekDays.map(day => (
+                  <div key={day} className="p-3 text-center text-sm font-semibold text-surface-600 bg-surface-50">
+                    {day}
+                  </div>
+                ))}
+              </div>
               
-              return (
-                <DroppableDay 
-                  key={day.toString()}
-                  date={day}
-                  isCurrentMonth={isCurrentMonth}
-                >
-                  <motion.div
-                    whileHover={{ scale: isCurrentMonth ? 1.02 : 1 }}
-                    whileTap={{ scale: isCurrentMonth ? 0.98 : 1 }}
-                    className={`
-                      relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
-                      ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
-                      ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
-                    `}
-                    onClick={() => isCurrentMonth && handleDayClick(day)}
-                  >
-                    <div className={`
-                      text-sm font-medium mb-2
-                      ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                    `}>
-                      {format(day, 'd')}
-                    </div>
-                    
-                    {/* Task indicators */}
-                    {dayTasks.length > 0 && (
-                      <div className="space-y-1">
-                        {dayTasks.slice(0, 3).map(task => (
-                          <DraggableTask key={task.id} task={task}>
-                            <div
-                              className={`
-                                text-xs p-1 rounded truncate text-white font-medium cursor-grab active:cursor-grabbing
-                                ${getPriorityColor(task.priority)}
-                              `}
-                              title={task.title}
-                            >
-                              {task.title}
-                            </div>
-                          </DraggableTask>
-                        ))}
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7">
+                {calendarDays.map((day, index) => {
+                  const dayTasks = getTasksForDate(day)
+                  const isCurrentMonth = isSameMonth(day, currentDate)
+                  const isDayToday = isToday(day)
+                  
+                  return (
+                    <DroppableDay 
+                      key={day.toString()}
+                      date={day}
+                      isCurrentMonth={isCurrentMonth}
+                    >
+                      <motion.div
+                        whileHover={{ scale: isCurrentMonth ? 1.02 : 1 }}
+                        whileTap={{ scale: isCurrentMonth ? 0.98 : 1 }}
+                        className={`
+                          relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
+                          ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
+                          ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
+                        `}
+                        onClick={() => isCurrentMonth && handleDayClick(day)}
+                      >
+                        <div className={`
+                          text-sm font-medium mb-2
+                          ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
+                        `}>
+                          {format(day, 'd')}
+                        </div>
                         
-                        {dayTasks.length > 3 && (
-                          <div className="text-xs text-surface-500 font-medium">
-                            +{dayTasks.length - 3} more
+                        {/* Task indicators */}
+                        {dayTasks.length > 0 && (
+                          <div className="space-y-1">
+                            {dayTasks.slice(0, 3).map(task => (
+                              <DraggableTask key={task.id} task={task}>
+                                <div
+                                  className={`
+                                    text-xs p-1 rounded truncate text-white font-medium cursor-grab active:cursor-grabbing
+                                    ${getPriorityColor(task.priority)}
+                                  `}
+                                  title={task.title}
+                                >
+                                  {task.title}
+                                </div>
+                              </DraggableTask>
+                            ))}
+                            
+                            {dayTasks.length > 3 && (
+                              <div className="text-xs text-surface-500 font-medium">
+                                +{dayTasks.length - 3} more
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
-                    )}
-                  </motion.div>
-                </DroppableDay>
-              )
-            })}
-          </div>
-                >
-                  <div className={`
-                    text-sm font-medium mb-2
-                    ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                  `}>
-                    {format(day, 'd')}
-                  </div>
-                  
-                  {/* Task indicators */}
-                  {dayTasks.length > 0 && (
-                    <div className="space-y-1">
-                      {dayTasks.slice(0, 3).map(task => (
-                        <div
-                          key={task.id}
-                          className={`
-                            text-xs p-1 rounded truncate text-white font-medium
-                            ${getPriorityColor(task.priority)}
-                          `}
-                          title={task.title}
-                        >
-                          {task.title}
-                        </div>
-                      ))}
-                      
-                      {dayTasks.length > 3 && (
-                        <div className="text-xs text-surface-500 font-medium">
-                          +{dayTasks.length - 3} more
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              )
-            })}
+                      </motion.div>
+                    </DroppableDay>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Day Tasks Modal */}
-      <AnimatePresence>
-        {showTaskModal && selectedDate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowTaskModal(false)}
-          >
+        
+        {/* Day Tasks Modal */}
+        <AnimatePresence>
+          {showTaskModal && selectedDate && (
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowTaskModal(false)}
             >
-              {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-surface-200 bg-gradient-to-r from-primary/5 to-secondary/5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-surface-900">
-                      {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-                    </h3>
-                    <p className="text-sm text-surface-600 mt-1">
-                      {selectedTasks.length} task{selectedTasks.length !== 1 ? 's' : ''}
-                    </p>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-surface-200 bg-gradient-to-r from-primary/5 to-secondary/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-surface-900">
+                        {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                      </h3>
+                      <p className="text-sm text-surface-600 mt-1">
+                        {selectedTasks.length} task{selectedTasks.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleCreateTask}
+                        className="btn-sleek"
+                      >
+                        <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
+                        Add Task
+                      </button>
+                      
+                      <button
+                        onClick={() => setShowTaskModal(false)}
+                        className="p-2 rounded-lg bg-surface-100 hover:bg-surface-200 transition-colors"
+                      >
+                        <ApperIcon name="X" className="w-5 h-5 text-surface-600" />
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleCreateTask}
-                      className="btn-sleek"
-                    >
-                      <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
-                      Add Task
-                    </button>
+                </div>
+                
+                {/* Modal Content */}
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                  {selectedTasks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-surface-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ApperIcon name="Calendar" className="w-8 h-8 text-surface-400" />
+                      </div>
+                      <h4 className="text-lg font-semibold text-surface-900 mb-2">No tasks for this day</h4>
+                      <p className="text-surface-600 mb-6">Create a new task to get started</p>
+                      <button
+                        onClick={handleCreateTask}
+                        className="btn-primary"
+                      >
+                        <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
+                        Create Task
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {selectedTasks.map(task => (
+                        <motion.div
+                          key={task.id}
+                          layout
+                          className="bg-gradient-to-r from-white to-surface-50 rounded-xl p-4 border border-surface-200 hover:shadow-md transition-all duration-300"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <h4 className="font-semibold text-surface-900">{task.title}</h4>
+                                <span className={`
+                                  px-2 py-1 rounded-full text-xs font-medium text-white
+                                  ${getPriorityColor(task.priority)}
+                                `}>
+                                  {task.priority}
+                                </span>
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-200 text-surface-700">
+                                  {task.category}
+                                </span>
+                              </div>
+                              
+                              {task.description && (
+                                <p className="text-sm text-surface-600 mb-3">{task.description}</p>
+                              )}
+                              
+                              {task.tags && task.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {task.tags.map(tag => (
+                                    <span key={tag} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center space-x-4 text-xs text-surface-500">
+                                <span>Status: {task.status}</span>
+                                {task.dueDate && (
+                                  <span>Due: {format(parseISO(task.dueDate), 'MMM d, yyyy')}</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 ml-4">
+                              <button
+                                onClick={() => handleEditTask(task)}
+                                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+                                title="Edit task"
+                              >
+                                <ApperIcon name="Edit" className="w-4 h-4" />
+                              </button>
+                              
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                                title="Delete task"
+                              >
+                                <ApperIcon name="Trash2" className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Create/Edit Task Modal */}
+        <AnimatePresence>
+          {showCreateModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowCreateModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-surface-200 bg-gradient-to-r from-primary/5 to-secondary/5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-surface-900">
+                      {editingTask ? 'Edit Task' : 'Create New Task'}
+                    </h3>
                     
                     <button
-                      onClick={() => setShowTaskModal(false)}
+                      onClick={() => setShowCreateModal(false)}
                       className="p-2 rounded-lg bg-surface-100 hover:bg-surface-200 transition-colors"
                     >
                       <ApperIcon name="X" className="w-5 h-5 text-surface-600" />
                     </button>
                   </div>
                 </div>
-              </div>
-              
-              {/* Modal Content */}
-              <div className="p-6 max-h-[60vh] overflow-y-auto">
-                {selectedTasks.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-surface-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <ApperIcon name="Calendar" className="w-8 h-8 text-surface-400" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-surface-900 mb-2">No tasks for this day</h4>
-                    <p className="text-surface-600 mb-6">Create a new task to get started</p>
-                    <button
-                      onClick={handleCreateTask}
-                      className="btn-primary"
-                    >
-                      <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
-                      Create Task
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {selectedTasks.map(task => (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        className="bg-gradient-to-r from-white to-surface-50 rounded-xl p-4 border border-surface-200 hover:shadow-md transition-all duration-300"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="font-semibold text-surface-900">{task.title}</h4>
-                              <span className={`
-                                px-2 py-1 rounded-full text-xs font-medium text-white
-                                ${getPriorityColor(task.priority)}
-                              `}>
-                                {task.priority}
-                              </span>
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-200 text-surface-700">
-                                {task.category}
-                              </span>
-                            </div>
-                            
-                            {task.description && (
-                              <p className="text-sm text-surface-600 mb-3">{task.description}</p>
-                            )}
-                            
-                            {task.tags && task.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {task.tags.map(tag => (
-                                  <span key={tag} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center space-x-4 text-xs text-surface-500">
-                              <span>Status: {task.status}</span>
-                              {task.dueDate && (
-                                <span>Due: {format(parseISO(task.dueDate), 'MMM d, yyyy')}</span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2 ml-4">
-                            <button
-                              onClick={() => handleEditTask(task)}
-                              className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-                              title="Edit task"
-                            >
-                              <ApperIcon name="Edit" className="w-4 h-4" />
-                            </button>
-                            
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-                              title="Delete task"
-                            >
-                              <ApperIcon name="Trash2" className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Create/Edit Task Modal */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowCreateModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-surface-200 bg-gradient-to-r from-primary/5 to-secondary/5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-surface-900">
-                    {editingTask ? 'Edit Task' : 'Create New Task'}
-                  </h3>
-                  
-                  <button
-                    onClick={() => setShowCreateModal(false)}
-                    className="p-2 rounded-lg bg-surface-100 hover:bg-surface-200 transition-colors"
-                  >
-                    <ApperIcon name="X" className="w-5 h-5 text-surface-600" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Modal Content */}
-              <form onSubmit={handleTaskSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
-                    Task Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={taskForm.title}
-                    onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                    className="input-neu w-full"
-                    placeholder="Enter task title"
-                    required
-                  />
-                </div>
                 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={taskForm.description}
-                    onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                    className="input-neu w-full h-24 resize-none"
-                    placeholder="Enter task description"
-                  />
-      </div>
-      
-      {/* Drag Overlay */}
-      <DragOverlay>
-        {draggedTask ? (
-          <div className="drag-overlay p-2 text-xs font-medium text-white rounded">
-            <div className={`p-1 rounded ${getPriorityColor(draggedTask.priority)}`}>
-              {draggedTask.title}
-            </div>
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
-                {/* Priority and Category */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Modal Content */}
+                <form onSubmit={handleTaskSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                  {/* Title */}
                   <div>
                     <label className="block text-sm font-semibold text-surface-700 mb-2">
-                      Priority
+                      Task Title *
                     </label>
-                    <select
-                      value={taskForm.priority}
-                      onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
-                      className="input-neu w-full"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      value={taskForm.category}
-                      onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
-                      className="input-neu w-full"
-                    >
-                      <option value="work">Work</option>
-                      <option value="personal">Personal</option>
-                      <option value="shopping">Shopping</option>
-                      <option value="health">Health</option>
-                      <option value="education">Education</option>
-                      <option value="finance">Finance</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Due Date and Status */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={taskForm.dueDate}
-                      onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                      className="input-neu w-full"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-surface-700 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={taskForm.status}
-                      onChange={(e) => setTaskForm({ ...taskForm, status: e.target.value })}
-                      className="input-neu w-full"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Tags */}
-                <div>
-                  <label className="block text-sm font-semibold text-surface-700 mb-2">
-                    Tags
-                  </label>
-                  
-                  <div className="flex space-x-2 mb-3">
                     <input
                       type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                      className="input-neu flex-1"
-                      placeholder="Add a tag"
+                      value={taskForm.title}
+                      onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                      className="input-neu w-full"
+                      placeholder="Enter task title"
+                      required
                     />
-                    <button
-                      type="button"
-                      onClick={handleAddTag}
-                      className="btn-sleek"
-                    >
-                      <ApperIcon name="Plus" className="w-4 h-4" />
-                    </button>
                   </div>
                   
-                  {taskForm.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {taskForm.tags.map(tag => (
-                        <span key={tag} className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                          #{tag}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveTag(tag)}
-                            className="ml-2 text-primary hover:text-primary-dark"
-                          >
-                            <ApperIcon name="X" className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-surface-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-6 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={taskForm.description}
+                      onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                      className="input-neu w-full h-24 resize-none"
+                      placeholder="Enter task description"
+                    />
+                  </div>
                   
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                  >
-                    {editingTask ? 'Update Task' : 'Create Task'}
-                  </button>
-                </div>
-              </form>
+                  {/* Priority and Category */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-surface-700 mb-2">
+                        Priority
+                      </label>
+                      <select
+                        value={taskForm.priority}
+                        onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
+                        className="input-neu w-full"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-surface-700 mb-2">
+                        Category
+                      </label>
+                      <select
+                        value={taskForm.category}
+                        onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
+                        className="input-neu w-full"
+                      >
+                        <option value="work">Work</option>
+                        <option value="personal">Personal</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="health">Health</option>
+                        <option value="education">Education</option>
+                        <option value="finance">Finance</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Due Date and Status */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-surface-700 mb-2">
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        value={taskForm.dueDate}
+                        onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
+                        className="input-neu w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-surface-700 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={taskForm.status}
+                        onChange={(e) => setTaskForm({ ...taskForm, status: e.target.value })}
+                        className="input-neu w-full"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-semibold text-surface-700 mb-2">
+                      Tags
+                    </label>
+                    
+                    <div className="flex space-x-2 mb-3">
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                        className="input-neu flex-1"
+                        placeholder="Add a tag"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddTag}
+                        className="btn-sleek"
+                      >
+                        <ApperIcon name="Plus" className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {taskForm.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {taskForm.tags.map(tag => (
+                          <span key={tag} className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                            #{tag}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-2 text-primary hover:text-primary-dark"
+                            >
+                              <ApperIcon name="X" className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Form Actions */}
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-surface-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      className="px-6 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                    >
+                      {editingTask ? 'Update Task' : 'Create Task'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+        
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {draggedTask ? (
+            <div className="drag-overlay p-2 text-xs font-medium text-white rounded">
+              <div className={`p-1 rounded ${getPriorityColor(draggedTask.priority)}`}>
+                {draggedTask.title}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </div>
+    </DndContext>
   )
 }
 
