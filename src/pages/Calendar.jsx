@@ -16,13 +16,6 @@ import {
   isToday
 } from 'date-fns'
 import ApperIcon from '../components/ApperIcon'
-import {
-  DndContext,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-  closestCenter
-} from '@dnd-kit/core'
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -38,7 +31,6 @@ const Calendar = () => {
     title: '',
     description: '',
     priority: 'medium',
-  const [activeTask, setActiveTask] = useState(null)
     category: 'work',
     dueDate: '',
     tags: [],
@@ -51,58 +43,6 @@ const Calendar = () => {
   useEffect(() => {
     const savedTasks = localStorage.getItem('taskflow_tasks')
     if (savedTasks) {
-
-  // Handle drag end
-  const handleDragEnd = (event) => {
-    const { active, over } = event
-    
-    if (!over) {
-      setActiveTask(null)
-      return
-    }
-    
-    const taskId = active.id
-    const newDate = over.id
-    
-    // Find the task being dragged
-    const task = tasks.find(t => t.id === taskId)
-    if (!task) {
-      setActiveTask(null)
-      return
-    }
-    
-    // Check if dropping on a different date
-    const currentDate = task.dueDate
-    if (currentDate === newDate) {
-      setActiveTask(null)
-      return
-    }
-    
-    // Update task with new due date
-    const updatedTasks = tasks.map(t => 
-      t.id === taskId 
-        ? { ...t, dueDate: newDate, updatedAt: new Date().toISOString() }
-        : t
-    )
-    
-    setTasks(updatedTasks)
-    
-    // Update selected tasks if modal is open and date matches
-    if (selectedDate && showTaskModal) {
-      const dayTasks = getTasksForDate(selectedDate)
-      setSelectedTasks(dayTasks)
-    }
-    
-    setActiveTask(null)
-    toast.success(`Task moved to ${format(parseISO(newDate), 'MMM d, yyyy')}`)
-  }
-  
-  // Handle drag start
-  const handleDragStart = (event) => {
-    const taskId = event.active.id
-    const task = tasks.find(t => t.id === taskId)
-    setActiveTask(task)
-  }
       setTasks(JSON.parse(savedTasks))
     }
   }, [])
@@ -230,61 +170,6 @@ const Calendar = () => {
       
       const updatedTasks = [...tasks, newTask]
       setTasks(updatedTasks)
-
-// Draggable Task Component
-const DraggableTask = ({ task, children }) => {
-  const {
-  return (
-    <DndContext
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-surface-900 dark:via-surface-800 dark:to-primary-900">
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: task.id,
-  })
-
-  const style = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className="cursor-move"
-    >
-      {children}
-    </div>
-  )
-}
-
-// Droppable Day Component
-const DroppableDay = ({ date, children, isCurrentMonth }) => {
-  const { isOver, setNodeRef } = useDroppable({
-    id: format(date, 'yyyy-MM-dd'),
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`
-        ${isOver && isCurrentMonth ? 'bg-primary-100 border-primary-300' : ''}
-        ${isOver && !isCurrentMonth ? 'bg-surface-200' : ''}
-      `}
-    >
-      {children}
-    </div>
-  )
-}
       
       // Update selected tasks if viewing day details
       if (selectedDate) {
@@ -296,51 +181,49 @@ const DroppableDay = ({ date, children, isCurrentMonth }) => {
     }
     
     setShowCreateModal(false)
-                <DroppableDay date={day} isCurrentMonth={isCurrentMonth}>
-                  <motion.div
-                    key={day.toString()}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`
-                      relative min-h-[120px] p-3 border-r border-b border-surface-200 last:border-r-0 cursor-pointer transition-all duration-300
-                      ${isCurrentMonth ? 'bg-white hover:bg-surface-50' : 'bg-surface-100 text-surface-400'}
-                      ${isDayToday ? 'bg-primary-50 border-primary-200' : ''}
-                    `}
-                    onClick={() => handleDayClick(day)}
-                  >
-                    <div className={`
-                      text-sm font-medium mb-2
-                      ${isDayToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                    `}>
-                      {format(day, 'd')}
-                    </div>
-                    
-                    {/* Task indicators */}
-                    {dayTasks.length > 0 && (
-                      <div className="space-y-1">
-                        {dayTasks.slice(0, 3).map(task => (
-                          <DraggableTask key={task.id} task={task}>
-                            <div
-                              className={`
-                                text-xs p-1 rounded truncate text-white font-medium transition-all duration-200 hover:shadow-md
-                                ${getPriorityColor(task.priority)}
-                              `}
-                              title={task.title}
-                            >
-                              {task.title}
-                            </div>
-                          </DraggableTask>
-                        ))}
-                        
-                        {dayTasks.length > 3 && (
-                          <div className="text-xs text-surface-500 font-medium">
-                            +{dayTasks.length - 3} more
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                </DroppableDay>
+    setEditingTask(null)
+  }
+  
+  // Handle adding tags
+  const handleAddTag = () => {
+    if (tagInput.trim() && !taskForm.tags.includes(tagInput.trim())) {
+      setTaskForm({
+        ...taskForm,
+        tags: [...taskForm.tags, tagInput.trim()]
+      })
+      setTagInput('')
+    }
+  }
+  
+  // Handle removing tags
+  const handleRemoveTag = (tagToRemove) => {
+    setTaskForm({
+      ...taskForm,
+      tags: taskForm.tags.filter(tag => tag !== tagToRemove)
+    })
+  }
+  
+  // Generate calendar days
+  const generateCalendarDays = () => {
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(monthStart)
+    const startDate = startOfWeek(monthStart)
+    const endDate = endOfWeek(monthEnd)
+    
+    const days = []
+    let day = startDate
+    
+    while (day <= endDate) {
+      days.push(day)
+      day = addDays(day, 1)
+    }
+    
+    return days
+  }
+  
+  // Get priority color
+  const getPriorityColor = (priority) => {
+    switch (priority) {
       case 'high': return 'bg-red-500'
       case 'medium': return 'bg-yellow-500'
       case 'low': return 'bg-green-500'
@@ -634,21 +517,8 @@ const DroppableDay = ({ date, children, isCurrentMonth }) => {
                 </div>
               </div>
               
-        
-        {/* Drag Overlay */}
-        <DragOverlay>
-          {activeTask ? (
-            <div className={`
-              text-xs p-1 rounded truncate text-white font-medium shadow-lg transform rotate-2
-              ${getPriorityColor(activeTask.priority)}
-            `}>
-              {activeTask.title}
-            </div>
-          ) : null}
-        </DragOverlay>
-      </div>
-    </DndContext>
-  )
+              {/* Modal Content */}
+              <form onSubmit={handleTaskSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-semibold text-surface-700 mb-2">
