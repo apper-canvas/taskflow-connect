@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
 
 function Home() {
@@ -96,6 +96,24 @@ function Home() {
             </div>
           </motion.div>
 
+          {/* Dashboard Button */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+            className="hidden sm:block"
+          >
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-2 px-4 py-3 card-neu hover:scale-105 transition-all duration-300 group"
+            >
+              <ApperIcon name="BarChart3" className="h-5 w-5 text-primary group-hover:text-primary-light transition-colors" />
+              <span className="font-medium text-surface-700 dark:text-surface-300 group-hover:text-primary transition-colors">
+                Dashboard
+              </span>
+            </Link>
+          </motion.div>
+
           {/* Dark Mode Toggle */}
           <motion.button
             onClick={() => setDarkMode(!darkMode)}
@@ -112,24 +130,6 @@ function Home() {
               <ApperIcon name="Moon" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
             )}
           </motion.button>
-        </div>
-      </motion.header>
-
-      {/* Hero Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-8"
-          >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-surface-800 dark:text-surface-100 mb-4 text-balance">
               Transform Your 
               <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"> Productivity</span>
             </h2>
