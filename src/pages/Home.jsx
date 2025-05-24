@@ -115,6 +115,23 @@ function Home() {
             </Link>
           </motion.div>
           {/* Dark Mode Toggle */}
+          {/* Calendar Button */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+          >
+            <Link
+              to="/calendar"
+              className="card-neu p-3 hover:scale-105 transition-all duration-300 group flex items-center space-x-2"
+            >
+              <ApperIcon name="Calendar" className="h-6 w-6 text-primary group-hover:text-primary-light transition-colors" />
+              <span className="hidden sm:block text-sm font-medium text-surface-700 dark:text-surface-300 group-hover:text-primary transition-colors">
+                Calendar
+              </span>
+            </Link>
+          </motion.div>
+
           <motion.button
             onClick={() => setDarkMode(!darkMode)}
             className="p-3 rounded-xl bg-gradient-to-br from-surface-100 to-surface-200 dark:from-surface-700 dark:to-surface-800 shadow-neu-light hover:shadow-glow transition-all duration-300 group"
